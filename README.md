@@ -18,6 +18,23 @@ poetry run pre-commit install
 
 ## Test
 
+Set up
 ```
-poetry run pytest
+# set this for sandbox; default is login.salesforce.com
+export FONDAT_SALESFORCE_ENDPOINT=https://test.salesforce.com
+
+# creds
+export FONDAT_SALESFORCE_CLIENT_ID=
+export FONDAT_SALESFORCE_CLIENT_SECRET=
+# ... only for password
+export FONDAT_SALESFORCE_USERNAME=
+export FONDAT_SALESFORCE_PASSWORD=
+# ... only for refresh
+export FONDAT_SALESFORCE_REFRESH_TOKEN=
+```
+
+Run
+```
+poetry run pytest -v --auth password
+poetry run pytest -v --auth refresh
 ```

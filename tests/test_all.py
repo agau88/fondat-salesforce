@@ -23,33 +23,32 @@ def event_loop():
 
 
 @pytest.fixture(scope="module")
-async def password_authenticator():
+async def authenticator(auth_type):
     env = os.environ
-    return fondat.salesforce.oauth.password_authenticator(
-        endpoint="https://login.salesforce.com",
-        client_id=env["FONDAT_SALESFORCE_CLIENT_ID"],
-        client_secret=env["FONDAT_SALESFORCE_CLIENT_SECRET"],
-        username=env["FONDAT_SALESFORCE_USERNAME"],
-        password=env["FONDAT_SALESFORCE_PASSWORD"],
-    )
+    if auth_type == "password":
+        return fondat.salesforce.oauth.password_authenticator(
+            client_id=env["FONDAT_SALESFORCE_CLIENT_ID"],
+            client_secret=env["FONDAT_SALESFORCE_CLIENT_SECRET"],
+            username=env["FONDAT_SALESFORCE_USERNAME"],
+            password=env["FONDAT_SALESFORCE_PASSWORD"],
+            endpoint=env.get("FONDAT_SALESFORCE_ENDPOINT", "https://login.salesforce.com"),
+        )
+    elif auth_type == "refresh":
+        return fondat.salesforce.oauth.refresh_authenticator(
+            client_id=env["FONDAT_SALESFORCE_CLIENT_ID"],
+            client_secret=env["FONDAT_SALESFORCE_CLIENT_SECRET"],
+            refresh_token=env["FONDAT_SALESFORCE_REFRESH_TOKEN"],
+            endpoint=env.get("FONDAT_SALESFORCE_ENDPOINT", "https://login.salesforce.com"),
+        )
+    else:
+        raise RuntimeError(f"auth_type {auth_type} must be password or refresh")
 
 
 @pytest.fixture(scope="module")
-async def refresh_authenticator():
-    env = os.environ
-    return fondat.salesforce.oauth.refresh_authenticator(
-        endpoint="https://login.salesforce.com",
-        client_id=env["FONDAT_SALESFORCE_CLIENT_ID"],
-        client_secret=env["FONDAT_SALESFORCE_CLIENT_SECRET"],
-        refresh_token=env["FONDAT_SALESFORCE_REFRESH_TOKEN"],
-    )
-
-
-@pytest.fixture(scope="module")
-async def client(refresh_authenticator):
+async def client(authenticator):
     async with aiohttp.ClientSession() as session:
         yield await fondat.salesforce.client.Client.create(
-            session=session, version="54.0", authenticate=refresh_authenticator
+            session=session, version="54.0", authenticate=authenticator
         )
 
 
